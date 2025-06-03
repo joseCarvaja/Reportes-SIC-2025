@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis Avanzado de Contratistas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; 
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            min-height: 100vh;
+            color: #2d3748;
+        }
+        .main-header {
+            background: linear-gradient(135deg, #962d46 0%, #7a253a 100%);
+            box-shadow: 0 4px 20px rgba(150, 45, 70, 0.3);
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.98);
+            border: 1px solid rgba(150, 45, 70, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+        .chart-container { 
+            position: relative; 
+            margin: auto; 
+            height: 350px; 
+            width: 100%; 
+            max-width: 600px; 
+            margin-bottom: 15px;
+        }
+        .section-title { 
+            font-size: 1.1rem; 
+            font-weight: 600; 
+            color: #962d46; 
+            margin-bottom: 1rem; 
+            padding-bottom: 0.5rem; 
+            border-bottom: 1px solid rgba(150, 45, 70, 0.2); 
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .toggle-btn {
+            background: linear-gradient(135deg, #962d46, #7a253a);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(150, 45, 70, 0.3);
+        }
+        .toggle-btn:hover {
+            background: linear-gradient(135deg, #7a253a, #5c1d2b);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(150, 45, 70, 0.4);
+        }
+        .close-btn {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+        }
+        .close-btn:hover {
+            background: linear-gradient(135deg, #c82333, #a71e2a);
+        }
+        .stats-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(248,249,250,0.9));
+            border: 1px solid rgba(150, 45, 70, 0.15);
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+        }
+        .stats-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(150, 45, 70, 0.2);
+        }
+        .table-simplified {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        }
+        .table-header-clean {
+            background: linear-gradient(135deg, #962d46, #7a253a);
+            color: white;
+        }
+        .table-header-clean th {
+            padding: 12px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: none;
+        }
+        .table-row-clean {
+            border-bottom: 1px solid #f1f3f4;
+            transition: all 0.2s ease;
+        }
+        .table-row-clean:hover {
+            background: linear-gradient(135deg, #fdf2f8, #fcf1f7);
+            cursor: pointer;
+        }
+        .table-row-clean td {
+            padding: 8px;
+            font-size: 0.8rem;
+            vertical-align: middle;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .loading-spinner {
+            border: 2px solid #f3f4f6;
+            border-top: 2px solid #962d46;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .compact-section {
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+        .info-box {
+            background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
+            border-left: 3px solid #962d46;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+    <header class="main-header text-white p-4 shadow-2xl">
+        <div class="container mx-auto">
+            <h1 class="text-2xl md:text-3xl font-bold text-center flex items-center justify-center gap-2">
+                <i class="fas fa-chart-line" style="color: #fda4af;"></i>
+                Análisis de Contratistas 2025
+            </h1>
+            <p class="text-center text-pink-100 mt-1 text-sm">Datos Abiertos - Colombia Compra Eficiente</p>
+        </div>
+    </header>
+
+    <div class="container mx-auto p-4 md:p-6 max-w-full">
+        <!-- Resumen General -->
+        <section class="compact-section glass-effect rounded-xl fade-in">
+            <h2 class="section-title">
+                <i class="fas fa-dashboard" style="color: #962d46;"></i>
+                Resumen Ejecutivo
+            </h2>
+
+            <div id="message-box" class="mt-2 p-2 rounded-md text-sm hidden"></div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-4">
+                <div class="stats-card p-4 rounded-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-xs font-medium" style="color: #962d46;">Contratos Válidos</h3>
+                            <p id="total-contratos-validos" class="text-xl font-bold" style="color: #7a253a;">0</p>
+                        </div>
+                        <i class="fas fa-file-contract text-2xl opacity-60" style="color: #962d46;"></i>
+                    </div>
+                </div>
+
+                <div class="stats-card p-4 rounded-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-xs font-medium" style="color: #059669;">Monto Total</h3>
+                            <p id="monto-total-general" class="text-xl font-bold" style="color: #047857;">$0</p>
+                        </div>
+                        <i class="fas fa-dollar-sign text-2xl opacity-60" style="color: #059669;"></i>
+                    </div>
+                </div>
+
+                <div class="stats-card p-4 rounded-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-xs font-medium" style="color: #962d46;">Contratistas</h3>
+                            <p id="contratistas-unicos" class="text-xl font-bold" style="color: #7a253a;">0</p>
+                        </div>
+                        <i class="fas fa-users text-2xl opacity-60" style="color: #962d46;"></i>
+                    </div>
+                </div>
+
+                <div class="stats-card p-4 rounded-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-xs font-medium" style="color: #d97706;">Múltiples Contratos</h3>
+                            <p id="contratos-en-ejecucion" class="text-xl font-bold" style="color: #b45309;">0</p>
+                        </div>
+                        <i class="fas fa-users text-2xl opacity-60" style="color: #d97706;"></i>
+                    </div>
+                </div>
+
+                <div class="stats-card p-4 rounded-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-xs font-medium" style="color: #dc2626;">Rechazados</h3>
+                            <p id="total-contratos-rechazados" class="text-xl font-bold" style="color: #b91c1c;">0</p>
+                        </div>
+                        <i class="fas fa-times-circle text-2xl opacity-60" style="color: #dc2626;"></i>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Secciones de Análisis -->
+        <section id="analysis-sections" class="hidden fade-in">
+            <!-- Visualizaciones -->
+            <div class="compact-section glass-effect rounded-xl">
+                <h2 class="section-title">
+                    <i class="fas fa-chart-bar" style="color: #962d46;"></i>
+                    Análisis Visual (Contratistas con mas de 1 contrato en el año)
+                </h2>
+                <div class="info-box">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Haz clic en los gráficos para ver detalles específicos
+                </div>
+
+                <div class="chart-grid">
+                    <div class="glass-effect p-3 rounded-lg">
+                        <h3 class="text-sm font-semibold mb-2 text-center" style="color: #962d46;">
+                            <i class="fas fa-trophy mr-1"></i>
+                            Top Contratistas por Valor
+                        </h3>
+                        <div class="chart-container">
+                            <canvas id="chartTopContratistas"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="glass-effect p-3 rounded-lg">
+                        <h3 class="text-sm font-semibold mb-2 text-center" style="color: #962d46;">
+                            <i class="fas fa-building mr-1"></i>
+                            Valor por Área
+                        </h3>
+                        <div class="chart-container">
+                            <canvas id="chartValorPorDependencia"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="glass-effect p-3 rounded-lg">
+                        <h3 class="text-sm font-semibold mb-2 text-center" style="color: #962d46;">
+                            <i class="fas fa-list-ol mr-1"></i>
+                            Cantidad por Área
+                        </h3>
+                        <div class="chart-container">
+                            <canvas id="chartCantidadPorDependencia"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resumen por Dependencia -->
+            <div class="compact-section glass-effect rounded-xl">
+                <h2 class="section-title" id="titulo-resumen-dependencia">
+                    <i class="fas fa-sitemap" style="color: #962d46;"></i>
+                    Resumen por Área
+                </h2>
+                <div class="info-box">
+                    <i class="fas fa-hand-pointer mr-1"></i>
+                    Haz clic en una fila para filtrar contratistas frecuentes
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="table-simplified min-w-full">
+                        <thead class="table-header-clean">
+                            <tr>
+                                <th class="text-left">Área/Delegatura</th>
+                                <th class="text-center">Contratistas</th>
+                                <th class="text-center">Contratos</th>
+                                <th class="text-right">Valor Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-resumen-dependencia-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Contratistas Múltiples -->
+            <div class="glass-effect p-6 rounded-xl shadow-xl mb-8" id="seccion-multi-contratistas">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="section-title !mb-0 !border-b-0" id="titulo-multi-contratistas">
+                        <i class="fas fa-user-friends text-purple-500"></i>
+                        Contratistas con Múltiples Contratos
+                    </h2>
+                    <button id="toggle-tabla-multi-contratistas" class="toggle-btn">
+                        <i class="fas fa-eye"></i> Mostrar Detalles
+                    </button>
+                </div>
+
+                <div class="bg-purple-50 border-l-4 border-purple-400 p-3 mb-4 rounded">
+                    <p class="text-sm text-purple-700">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        Haz clic en una fila para ver el detalle de los contratos de ese contratista.
+                    </p>
+                </div>
+
+                <div class="overflow-x-auto hidden" id="contenedor-tabla-multi-contratistas">
+                    <table class="min-w-full divide-y divide-gray-200 bg-white rounded-lg shadow">
+                        <thead style="background: linear-gradient(to right, #b8394f, #962d46);">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                                    <i class="fas fa-id-card mr-2"></i>Documento SECOP
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                                    <i class="fas fa-user mr-2"></i>Nombre Contratista
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                                    <i class="fas fa-hashtag mr-2"></i>Cantidad
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                                    <i class="fas fa-dollar-sign mr-2"></i>Valor Total
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-multi-contratistas-body" class="divide-y divide-gray-200"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección de Drilldown -->
+        <div id="drilldown-section" class="glass-effect p-6 rounded-xl shadow-xl mt-8 hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h2 id="drilldown-title" class="section-title !mb-0 !border-b-0 text-sky-700">
+                    <i class="fas fa-search-plus text-sky-500"></i>
+                    Detalle Filtrado
+                </h2>
+                <button id="toggle-tabla-drilldown" class="toggle-btn close-btn">
+                    <i class="fas fa-times"></i> Cerrar Detalle
+                </button>
+            </div>
+            <div class="overflow-x-auto" id="contenedor-tabla-drilldown">
+                <table class="min-w-full divide-y divide-gray-200 bg-white rounded-lg shadow">
+                    <thead style="background: linear-gradient(to right, #d6536d, #b8394f);"> 
+                        <tr>
+                            <th class="px-3 py-2 text-xs font-medium text-white uppercase">N° CTO</th>
+                            <th class="px-3 py-2 text-xs font-medium text-white uppercase">Estado</th>
+                            <th class="px-3 py-2 text-xs font-medium text-white uppercase">Contratista</th>
+                            <th class="px-3 py-2 text-xs font-medium text-white uppercase">Doc.#</th>
+                            <th class="px-3 py-2 text-xs font-medium text-white uppercase">Doc. SECOP</th>
+                            <th class="px-3 py-2 text-xs font-medium text-white uppercase">Cedido</th>
+                            <th class="px-3 py-2 text-xs font-medium text-white uppercase">Área</th>
+                            <th class="px-3 py-2 text-xs font-medium text-white uppercase">Honorarios</th>
+                            <th class="px-3 py-2 text-xs font-medium text-white uppercase">Valor</th>
+                            <th class="px-3 py-2 text-xs font-medium text-white uppercase">Plazo</th>
+                            <th class="px-3 py-2 text-xs font-medium text-white uppercase">Aprobado</th>
+                            <th class="px-3 py-2 text-xs font-medium text-white uppercase">F. Aprobación</th>
+                            <th class="px-3 py-2 text-xs font-medium text-white uppercase">F. Firma</th>
+                        </tr>
+                    </thead>
+                    <tbody id="drilldown-table-body" class="divide-y divide-gray-200"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Contratos Válidos -->
+        <div class="glass-effect p-6 rounded-xl shadow-xl mt-8">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="section-title !mb-0 !border-b-0">
+                    <i class="fas fa-check-circle text-green-500"></i>
+                    Detalle de Contratos Válidos
+                </h2>
+                <button id="toggle-tabla-validos" class="toggle-btn">
+                    <i class="fas fa-eye"></i> Mostrar Detalles
+                </button>
+            </div>
+            <div class="overflow-x-auto hidden" id="contenedor-tabla-validos"> 
+                <table class="min-w-full divide-y divide-gray-200 bg-white rounded-lg shadow" id="tabla-todos-contratos">
+                    <thead style="background: linear-gradient(to right, #059669, #047857);"> 
+                        <tr>
+                            <th class="px-3 py-2 text-xs font-medium text-white uppercase">N° CTO</th>
+                            <th class="px-3 py-2 text-xs font-medium text-white uppercase">Estado</th>
+                            <th class="px-3 py-2 text-xs font-medium text-white uppercase">Contratista</th>
+                            <th class="px-3 py-2 text-xs font-medium text-white uppercase">Doc.#</th>
+                            <th class="px-3 py-2 text-xs font-medium text-white uppercase">Doc. SECOP</th>
+                            <th class="px-3 py-2 text-xs font-medium text-white uppercase">Cedido</th>
+                            <th class="px-3 py-2 text-xs font-medium text-white uppercase">Área</th>
+                            <th class="px-3 py-2 text-xs font-medium text-white uppercase">Honorarios</th>
+                            <th class="px-3 py-2 text-xs font-medium text-white uppercase">Valor</th>
+                            <th class="px-3 py-2 text-xs font-medium text-white uppercase">Plazo</th>
+                            <th class="px-3 py-2 text-xs font-medium text-white uppercase">Aprobado</th>
+                            <th class="px-3 py-2 text-xs font-medium text-white uppercase">F. Aprobación</th>
+                            <th class="px-3 py-2 text-xs font-medium text-white uppercase">F. Firma</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-todos-contratos-body" class="divide-y divide-gray-200"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Contratos Rechazados -->
+        <div class="glass-effect p-6 rounded-xl shadow-xl mt-8" id="seccion-contratos-rechazados" style="display: none;">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="section-title !mb-0 !border-b-0 text-red-700">
+                    <i class="fas fa-times-circle text-red-500"></i>
+                    Detalle de Contratos Rechazados/Anulados
+                </h2>
+                <button id="toggle-tabla-rechazados" class="toggle-btn close-btn">
+                    <i class="fas fa-eye"></i> Mostrar Detalles
+                </button>
+            </div>
+            <div class="overflow-x-auto hidden" id="contenedor-tabla-rechazados"> 
+                <table class="min-w-full divide-y divide-gray-200 bg-white rounded-lg shadow">
+                    <thead style="background: linear-gradient(to right, #dc2626, #b91c1c);"> 
+                        <tr>
+                            <th class="px-3 py-2 text-xs font-medium text-white uppercase">N° CTO</th>
+                            <th class="px-3 py-2 text-xs font-medium text-white uppercase">Estado</th>
+                            <th class="px-3 py-2 text-xs font-medium text-white uppercase">Contratista</th>
+                            <th class="px-3 py-2 text-xs font-medium text-white uppercase">Doc.#</th>
+                            <th class="px-3 py-2 text-xs font-medium text-white uppercase">Doc. SECOP</th>
+                            <th class="px-3 py-2 text-xs font-medium text-white uppercase">Cedido</th>
+                            <th class="px-3 py-2 text-xs font-medium text-white uppercase">Área</th>
+                            <th class="px-3 py-2 text-xs font-medium text-white uppercase">Honorarios</th>
+                            <th class="px-3 py-2 text-xs font-medium text-white uppercase">Valor</th>
+                            <th class="px-3 py-2 text-xs font-medium text-white uppercase">Plazo</th>
+                            <th class="px-3 py-2 text-xs font-medium text-white uppercase">Aprobado</th>
+                            <th class="px-3 py-2 text-xs font-medium text-white uppercase">F. Aprobación</th>
+                            <th class="px-3 py-2 text-xs font-medium text-white uppercase">F. Firma</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-rechazados-body" class="divide-y divide-gray-200"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-gradient-to-r from-gray-800 to-gray-900 text-white text-center p-6 mt-12">
+        <div class="container mx-auto">
+            <p class="flex items-center justify-center gap-2 mb-2">
+                <i class="fas fa-copyright"></i>
+                <span id="current-year"></span> Grupo de Apoyo de Secretaria General.
+            </p>
+            <p class="text-sm text-gray-300 flex items-center justify-center gap-2">
+                <i class="fas fa-calendar-alt"></i>
+                Generado el: <span id="fecha-generacion">[Fecha Actual]</span>
+            </p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
